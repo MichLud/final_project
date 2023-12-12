@@ -103,8 +103,8 @@ class _SummaryPageState extends State<SummaryPage> {
       body: Center(
         child: Column(
           children: [
+            const SizedBox(height: 20),
             if (selectedCharacter != null) ...[
-              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -112,8 +112,14 @@ class _SummaryPageState extends State<SummaryPage> {
                   removeButton(selectedCharacter),
                 ],
               ),
+              const SizedBox(height: 20),
+
               characterSummary(selectedCharacter),
-            ] else ...[
+            ]
+            else ...[
+              addButton(),
+              SizedBox(height:20),
+
               const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -126,7 +132,6 @@ class _SummaryPageState extends State<SummaryPage> {
                   ),
                 ],
               ),
-              addButton(),
             ],
           ],
         ),
