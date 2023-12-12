@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'D&D Character Sheet',
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.orange),
           useMaterial3: true,
         ),
         home: SummaryPage(title: 'Character Summary Page'),

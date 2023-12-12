@@ -99,10 +99,12 @@ class _SummaryPageState extends State<SummaryPage> {
     return Scaffold(
       appBar: buildAppBar(context, widget.title),
       drawer: buildDrawer(context),
+      backgroundColor: Colors.brown[700],
       body: Center(
         child: Column(
           children: [
             if (selectedCharacter != null) ...[
+              const SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -112,12 +114,17 @@ class _SummaryPageState extends State<SummaryPage> {
               ),
               characterSummary(selectedCharacter),
             ] else ...[
-              Text(
-                'No Character Selected',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'No Character Selected',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               addButton(),
             ],
@@ -132,12 +139,17 @@ class _SummaryPageState extends State<SummaryPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Currently Selected',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Currently Selected - ${selectedCharacter.name}',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 20),
         Card(
@@ -188,8 +200,7 @@ class _SummaryPageState extends State<SummaryPage> {
   Widget addButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        primary: Colors.blue, // Background color
-        onPrimary: Colors.white, // Text color
+        backgroundColor: Colors.grey, // Background color
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Button padding
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8), // Button border radius
@@ -203,8 +214,7 @@ class _SummaryPageState extends State<SummaryPage> {
   Widget removeButton(Character selectedCharacter) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        primary: Colors.blue, // Background color
-        onPrimary: Colors.white, // Text color
+        backgroundColor: Colors.grey, // Background color
         padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Button padding
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8), // Button border radius
