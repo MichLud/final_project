@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'summary_page.dart';
 import 'attributes_page.dart';
 import 'spells_page.dart';
@@ -82,6 +83,45 @@ AppBar buildAppBar(BuildContext context, String title) {
   );
 }
 
+Stream<List<Character>> getCharactersFromFirebase() {
+  CollectionReference characters =
+  FirebaseFirestore.instance.collection('characters');
+
+  return characters.snapshots().map((snapshot) {
+    return snapshot.docs.map((doc) {
+      return Character(
+        name: doc['name'],
+        race: doc['race'],
+        characterClass: doc['characterClass'],
+        characterId: doc.id, // Assign documentId when fetching characters
+        // Map other properties
+      );
+    }).toList();
+  });
+}
+
+Future<void> addCharacterToFirebase(Character newCharacter) async {
+  CollectionReference characters =
+  FirebaseFirestore.instance.collection('characters');
+
+  DocumentReference docRef = await characters.add({
+    'name': newCharacter.name,
+    'race': newCharacter.race,
+    'characterClass': newCharacter.characterClass,
+    'attributes': newCharacter.attributes,
+    // Add other properties as needed
+  });
+
+  newCharacter.characterId = docRef.id;
+}
+
+Future<void> removeCharacterFromFirebase(String characterId) async {
+  CollectionReference characters =
+  FirebaseFirestore.instance.collection('characters');
+
+  await characters.doc(characterId).delete();
+}
+
 class CharacterProvider extends ChangeNotifier {
   Character? _selectedCharacter;
 
@@ -89,6 +129,11 @@ class CharacterProvider extends ChangeNotifier {
 
   void selectCharacter(Character character) {
     _selectedCharacter = character;
+    notifyListeners();
+  }
+
+  void removeSelectedCharacter() {
+    _selectedCharacter = null;
     notifyListeners();
   }
 

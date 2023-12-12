@@ -5,9 +5,9 @@ import 'character.dart';
 
 class SummaryPage extends StatefulWidget {
   const SummaryPage({
-    super.key,
+    Key? key, // Fix 'super.key' to 'Key? key'
     required this.title,
-  });
+  }) : super(key: key);
 
   final String title;
 
@@ -17,15 +17,7 @@ class SummaryPage extends StatefulWidget {
 
 class _SummaryPageState extends State<SummaryPage> {
 
-
   _addCharacter(BuildContext context) {
-
-    showDialog(
-        context: context,
-        builder: (BuildContext context) =>
-            Text("New Dialog"),
-    );
-    /*
     TextEditingController nameController = TextEditingController();
     TextEditingController raceController = TextEditingController();
     TextEditingController classController = TextEditingController();
@@ -56,18 +48,20 @@ class _SummaryPageState extends State<SummaryPage> {
 
           actions: [
             ElevatedButton(
-              onPressed: () {
-                // Create a new character with entered information
+              onPressed: () async {
                 Character newCharacter = Character(
                   name: nameController.text,
                   race: raceController.text,
                   characterClass: classController.text,
                 );
 
-                // Add the new character to the characterList
-                characterList.add(newCharacter);
+                // Add the new character to Firebase Firestore
+                await addCharacterToFirebase(newCharacter);
 
-                // Notify listeners or update the UI accordingly
+                // Change the selected character the the newly created character
+                Provider.of<CharacterProvider>(context, listen: false)
+                    .selectCharacter(newCharacter);
+
                 Navigator.pop(context); // Close the dialog
                 setState(() {});
               },
@@ -83,79 +77,141 @@ class _SummaryPageState extends State<SummaryPage> {
         );
       },
     );
-
-     */
   }
 
-  _removeCharacter(Character? character) {
-    // Check if the characterList contains the character to remove
-    if (characterList.contains(character)) {
-      // Remove the specified character from the characterList
-      characterList.remove(character);
-
-      // Notify listeners or update the UI accordingly
+  _removeCharacter(Character? character) async {
+    if (character != null) {
+      // Remove the character from Firebase Firestore
+      await removeCharacterFromFirebase(character.characterId.toString());
       setState(() {});
+
+      Provider.of<CharacterProvider>(context, listen: false)
+          .removeSelectedCharacter();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    CharacterProvider characterProvider = Provider.of<CharacterProvider>(context);
+    CharacterProvider characterProvider =
+    Provider.of<CharacterProvider>(context);
     Character? selectedCharacter = characterProvider.selectedCharacter;
 
     return Scaffold(
-        appBar: buildAppBar(context, widget.title),
-        drawer: buildDrawer(context),
-        body: Center(
-            child: Column(
+      appBar: buildAppBar(context, widget.title),
+      drawer: buildDrawer(context),
+      body: Center(
+        child: Column(
+          children: [
+            if (selectedCharacter != null) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  if (selectedCharacter != null) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        addButton(),
-                        ElevatedButton(
-                          child: Text('Remove Character'),
-                          onPressed: _removeCharacter(selectedCharacter),
-                        ),
-                      ],
+                  addButton(),
+                  removeButton(selectedCharacter),
+                ],
+              ),
+              characterSummary(selectedCharacter),
+            ] else ...[
+              Text(
+                'No Character Selected',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              addButton(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+
+  Widget characterSummary(Character selectedCharacter) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Currently Selected',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 20),
+        Card(
+          elevation: 4,
+          margin: EdgeInsets.symmetric(horizontal: 16),
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ListTile(
+                  title: Text(
+                    'Name:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                    Text('Currently Selected'),
-                    SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Text('Name:'),
-                        SizedBox(width: 10),
-                        Text(selectedCharacter!.name,),
-                      ],
+                  ),
+                  subtitle: Text(selectedCharacter!.name),
+                ),
+                Divider(),
+                ListTile(
+                  title: Text(
+                    'Race:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                    Row(
-                      children: [
-                        Text('Race:'),
-                        SizedBox(width: 10),
-                        Text(selectedCharacter!.race,),
-                      ],
+                  ),
+                  subtitle: Text(selectedCharacter!.race),
+                ),
+                Divider(),
+                ListTile(
+                  title: Text(
+                    'Class:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
                     ),
-                    Row(
-                      children: [
-                        Text('Class:'),
-                        SizedBox(width: 10),
-                        Text(selectedCharacter!.characterClass,),
-                      ],
-                    ),
-                  ] else ...[
-                    Text('No character selected'),
-                    addButton(),
-                  ]
-                ])
-        )
+                  ),
+                  subtitle: Text(selectedCharacter!.characterClass),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget addButton() {
     return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        primary: Colors.blue, // Background color
+        onPrimary: Colors.white, // Text color
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Button padding
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8), // Button border radius
+        ),
+      ),
       child: Text('Add Character'),
-      onPressed: _addCharacter(context),
+      onPressed: () => _addCharacter(context),
+    );
+  }
+
+  Widget removeButton(Character selectedCharacter) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        primary: Colors.blue, // Background color
+        onPrimary: Colors.white, // Text color
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Button padding
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8), // Button border radius
+        ),
+      ),
+      child: Text('Remove Character'),
+      onPressed: () => _removeCharacter(selectedCharacter),
     );
   }
 }

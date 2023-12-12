@@ -1,4 +1,5 @@
 class Character {
+  String? characterId;
   String name;
   String race;
   String characterClass;
@@ -8,6 +9,7 @@ class Character {
     required this.name,
     required this.race,
     required this.characterClass,
+    this.characterId,
   }) {
     initializeAttributes();
   }
