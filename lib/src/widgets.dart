@@ -84,8 +84,7 @@ AppBar buildAppBar(BuildContext context, String title) {
 }
 
 Stream<List<Character>> getCharactersFromFirebase() {
-  CollectionReference characters =
-  FirebaseFirestore.instance.collection('characters');
+  CollectionReference characters = FirebaseFirestore.instance.collection('characters');
 
   return characters.snapshots().map((snapshot) {
     return snapshot.docs.map((doc) {
@@ -93,9 +92,14 @@ Stream<List<Character>> getCharactersFromFirebase() {
         name: doc['name'],
         race: doc['race'],
         characterClass: doc['characterClass'],
-        characterId: doc.id, // Assign documentId when fetching characters
-        // Map other properties
-      );
+        characterId: doc.id,
+        attributes: List<int>.from(doc['attributes']),
+        // spells: List<Spell>.from(
+          // (doc['spells'] as List<dynamic>).map((spell) => Spell(
+            // slotsMax: spell['slotsMax'],
+            // slotsUsed: spell['slotsUsed'],
+          // )),
+        );
     }).toList();
   });
 }
@@ -115,12 +119,32 @@ Future<void> addCharacterToFirebase(Character newCharacter) async {
   newCharacter.characterId = docRef.id;
 }
 
+// Update information in Firebase Firestore
+void updateCharacterInFirebase(Character character) {
+  FirebaseFirestore.instance
+      .collection('characters')
+      .doc(character.characterId)
+      .update({
+    'name': character.name,
+    'race': character.race,
+    'characterClass': character.characterClass,
+    'attributes': character.attributes,
+  })
+      .then((_) {
+    print('Character updated successfully in Firestore!');
+  })
+      .catchError((error) {
+    print('Error updating character: $error');
+  });
+}
+
 Future<void> removeCharacterFromFirebase(String characterId) async {
   CollectionReference characters =
   FirebaseFirestore.instance.collection('characters');
 
   await characters.doc(characterId).delete();
 }
+
 
 class CharacterProvider extends ChangeNotifier {
   Character? _selectedCharacter;
@@ -142,15 +166,37 @@ class CharacterProvider extends ChangeNotifier {
     required String race,
     required String characterClass,
     required List<int> attributes,
+    required List<Spell> spells,
   }) {
     if (_selectedCharacter != null) {
       _selectedCharacter!.name = name;
       _selectedCharacter!.race = race;
       _selectedCharacter!.characterClass = characterClass;
       _selectedCharacter!.attributes = attributes;
+      _selectedCharacter!.spells = spells;
       notifyListeners();
     }
   }
+}
+
+Future<void> updateCharacterSpellsInFirebase(Character character) async {
+  final List<Map<String, dynamic>> serializedSpells = character.spells.map((spell) {
+    return {
+      'slotsUsed': spell.slotsUsed,
+      'slotsMax': spell.slotsMax,
+    };
+  }).toList();
+
+  await FirebaseFirestore.instance
+      .collection('characters')
+      .doc(character.characterId)
+      .update({
+    'spells': serializedSpells,
+  }).then((_) {
+    print('Character spells updated successfully in Firestore!');
+  }).catchError((error) {
+    print('Error updating character spells: $error');
+  });
 }
 
 void showCharacterSelectionDialog(BuildContext context, List<Character> characters, Function(Character) onSelectCharacter) {

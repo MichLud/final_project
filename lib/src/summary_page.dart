@@ -5,7 +5,7 @@ import 'character.dart';
 
 class SummaryPage extends StatefulWidget {
   const SummaryPage({
-    Key? key, // Fix 'super.key' to 'Key? key'
+    Key? key,
     required this.title,
   }) : super(key: key);
 
@@ -18,75 +18,27 @@ class SummaryPage extends StatefulWidget {
 class _SummaryPageState extends State<SummaryPage> {
 
   _addCharacter(BuildContext context) {
-    TextEditingController nameController = TextEditingController();
-    TextEditingController raceController = TextEditingController();
-    TextEditingController classController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add New Character'),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: raceController,
-                  decoration: InputDecoration(labelText: 'Race'),
-                ),
-                TextField(
-                  controller: classController,
-                  decoration: InputDecoration(labelText: 'Class'),
-                ),
-              ],
-            ),
-          ),
-
-          actions: [
-            ElevatedButton(
-              onPressed: () async {
-                Character newCharacter = Character(
-                  name: nameController.text,
-                  race: raceController.text,
-                  characterClass: classController.text,
-                );
-
-                // Add the new character to Firebase Firestore
-                await addCharacterToFirebase(newCharacter);
-
-                // Change the selected character the the newly created character
-                Provider.of<CharacterProvider>(context, listen: false)
-                    .selectCharacter(newCharacter);
-
-                Navigator.pop(context); // Close the dialog
-                setState(() {});
-              },
-              child: Text('Add'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-              },
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
+    characterForm(context, null);
   }
 
-  _removeCharacter(Character? character) async {
+
+  _editCharacter(BuildContext context, Character selectedCharacter) {
+    characterForm(context, selectedCharacter);
+  }
+
+  Future<void> _removeCharacter(Character? character) async {
     if (character != null) {
       // Remove the character from Firebase Firestore
       await removeCharacterFromFirebase(character.characterId.toString());
-      setState(() {});
 
+      // Update the local state after successful deletion from Firestore
       Provider.of<CharacterProvider>(context, listen: false)
           .removeSelectedCharacter();
+
+      getCharactersFromFirebase();
+
+      // Ensure the UI reflects the updated state
+      setState(() {});
     }
   }
 
@@ -198,6 +150,18 @@ class _SummaryPageState extends State<SummaryPage> {
             ),
           ),
         ),
+        SizedBox(height: 20),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey, // Background color
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12), // Button padding
+            shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8), // Button border radius
+            ),
+          ),
+          child: Text('Edit Character'),
+          onPressed: () => _editCharacter(context, selectedCharacter),
+        ),
       ],
     );
   }
@@ -229,4 +193,85 @@ class _SummaryPageState extends State<SummaryPage> {
       onPressed: () => _removeCharacter(selectedCharacter),
     );
   }
+
+  void characterForm(BuildContext context, Character? selectedCharacter) {
+    TextEditingController nameController = TextEditingController();
+    TextEditingController raceController = TextEditingController();
+    TextEditingController classController = TextEditingController();
+
+    // Check if selectedCharacter is null
+    if (selectedCharacter != null) {
+      // Pre-populate fields with selectedCharacter's information
+      nameController.text = selectedCharacter.name;
+      raceController.text = selectedCharacter.race;
+      classController.text = selectedCharacter.characterClass;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(selectedCharacter != null ? 'Edit Character' : 'Add Character'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(labelText: 'Name'),
+                ),
+                TextField(
+                  controller: raceController,
+                  decoration: InputDecoration(labelText: 'Race'),
+                ),
+                TextField(
+                  controller: classController,
+                  decoration: InputDecoration(labelText: 'Class'),
+                ),
+              ],
+            ),
+          ),
+
+          actions: [
+            ElevatedButton(
+              onPressed: () async {
+                if (selectedCharacter != null) {
+                  // Update selectedCharacter with the new information
+                  selectedCharacter.name = nameController.text;
+                  selectedCharacter.race = raceController.text;
+                  selectedCharacter.characterClass = classController.text;
+                  updateCharacterInFirebase(selectedCharacter);
+
+                } else {
+                  Character newCharacter = Character(
+                    name: nameController.text,
+                    race: raceController.text,
+                    characterClass: classController.text,
+                  );
+
+                  // Add the new character to Firebase Firestore
+                  await addCharacterToFirebase(newCharacter);
+
+                  // Change the selected character the the newly created character
+                  Provider.of<CharacterProvider>(context, listen: false)
+                      .selectCharacter(newCharacter);
+                }
+
+                Navigator.pop(context); // Close the dialog
+                setState(() {});
+              },
+              child: Text('Add'),
+            ),
+
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+              child: Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }

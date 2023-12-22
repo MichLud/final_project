@@ -4,36 +4,44 @@ class Character {
   String race;
   String characterClass;
   List<int> attributes = [];
+  List<Spell> spells = [];
 
   Character({
     required this.name,
     required this.race,
     required this.characterClass,
+    List<int>? attributes,
     this.characterId,
+
   }) {
-    initializeAttributes();
+    this.attributes = attributes ?? initializeAttributes();
+    spells = initializeSpells();
   }
 
   initializeAttributes() {
-    for(int i=0; i<6; i++) {
+    for (int i = 0; i < 6; i++) {
       attributes.add(10);
     }
   }
 }
 
+class Spell {
+  int slotsUsed;
+  int slotsMax;
 
-newTestCharacter() {
-  return Character(
-      name: 'Eldric',
-      race: 'Human',
-      characterClass: 'Wizard'
-  );
+  Spell({
+    required this.slotsUsed,
+    required this.slotsMax,
+  });
 }
 
-getTestList() {
-  List<Character> characterList = [];
-  for(int i = 0; i < 4; i++) {
-    characterList.add(newTestCharacter());
+List<Spell> initializeSpells() {
+  List<Spell> spellList = [];
+  for(int i=0; i<9; i++) {
+    spellList.add(Spell(
+        slotsUsed: 0,
+        slotsMax: 0
+    ));
   }
-  return characterList;
+  return spellList;
 }
